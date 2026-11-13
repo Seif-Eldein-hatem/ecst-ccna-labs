@@ -1,16 +1,5 @@
 // Challenge rooms view, path progression, and question renderer registry
 
-// QuestionTypes registry conforming to CONTRACT.md
-window.QuestionTypes = {
-  _types: {},
-  register(type, handler) {
-    this._types[type] = handler;
-  },
-  get(type) {
-    return this._types[type];
-  }
-};
-
 // Default 'text' question type
 QuestionTypes.register('text', {
   render(q, ctx) {
@@ -78,10 +67,10 @@ ${(r.qs || []).map((q, k) => {
     solve: () => {
       Store.markSolved(em, r.id, qId);
       toast(`Correct! +${qPts}`);
-      draw();
+      draw({ keepScroll: true, focusId: 'a' + (k + 1) });
     }
   };
-  return `<div class="q ${isDone ? 'done' : ''}"><div class="mono">Task ${k + 1} · ${qPts} pts</div><div class="q-title">${e(q.q)}</div>${handler && handler.render ? handler.render(q, ctx) : ''}</div>`;
+  return `<div id="q-${r.id}-${qId}" class="q ${isDone ? 'done' : ''}"><div class="mono">Task ${k + 1} · ${qPts} pts</div>${q.exhibit ? `<pre class="exhibit mono">${e(q.exhibit)}</pre>` : ''}<div class="q-title">${e(q.q)}</div>${handler && handler.render ? handler.render(q, ctx) : ''}${isDone && q.explain ? `<div class="q-explain text-mut mt-8">${e(q.explain)}</div>` : ''}</div>`;
 }).join('')}
 ${cleared(em, r) ? `<div class="card room-cleared-card"><h3>Room cleared 🎉</h3>${S.rooms[i + 1] ? `<p><a class="btn btn-next-room" href="#room-${S.rooms[i + 1].id}">Next room →</a></p>` : '<p>You finished the track!</p>'}</div>` : ''}</main>`;
 }
@@ -103,5 +92,5 @@ function ans(i, k) {
   const qId = q.id !== undefined ? q.id : k;
   Store.markSolved(S.me.email, r.id, qId);
   toast(`Correct! +${Store.pts(q)}`);
-  draw();
+  draw({ keepScroll: true, focusId: 'a' + (k + 1) });
 }

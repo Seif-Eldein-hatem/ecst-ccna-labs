@@ -1,6 +1,17 @@
 // Data store, localStorage persistence, and points/progress helpers
 
-const K = 'ecst_v4';
+// QuestionTypes registry conforming to CONTRACT.md
+window.QuestionTypes = window.QuestionTypes || {
+  _types: {},
+  register(type, handler) {
+    this._types[type] = handler;
+  },
+  get(type) {
+    return this._types[type];
+  }
+};
+
+const K = window.__ECST_KEY || 'ecst_v4';
 const D = ['Easy', 'Medium', 'Hard', 'Expert'];
 let S = null;
 
@@ -23,7 +34,7 @@ function load() {
         { name: 'ECST Admin', email: 'admin@ecst.edu', pass: 'Ecst@2026!', role: 'admin' }
       ],
       prog: {},
-      rooms: (window.SEED || []).slice(),
+      rooms: JSON.parse(JSON.stringify(window.SEED || [])),
       me: null,
       deleted: [],
       exams: {}
@@ -36,19 +47,43 @@ function load() {
     S.exams = S.exams || {};
 
     // Admin migration: upgrade legacy admin email and password
-    const LEGACY_ADMIN_EMAIL = atob('YWxoYXNzYW5hZG1pbkBlY3N0LmVkdQ==');
     let migrated = false;
-    S.users.forEach(u => {
-      if (u.email === LEGACY_ADMIN_EMAIL || (u.role === 'admin' && u.email !== 'admin@ecst.edu')) {
-        u.email = 'admin@ecst.edu';
-        u.pass = 'Ecst@2026!';
-        migrated = true;
-      }
-    });
+    const adminUsers = S.users.filter(u => u.role === 'admin');
+    const hasCurrentAdmin = S.users.some(u => u.email === 'admin@ecst.edu');
 
-    if (S.me && (S.me.email === LEGACY_ADMIN_EMAIL || (S.me.role === 'admin' && S.me.email !== 'admin@ecst.edu'))) {
-      S.me.email = 'admin@ecst.edu';
-      S.me.pass = 'Ecst@2026!';
+    if (adminUsers.length === 1 && !hasCurrentAdmin && adminUsers[0].email !== 'admin@ecst.edu') {
+      const oldAdmin = adminUsers[0];
+      const oldEmail = oldAdmin.email;
+      const newEmail = 'admin@ecst.edu';
+      oldAdmin.email = newEmail;
+      oldAdmin.pass = 'Ecst@2026!';
+
+      // Move / merge S.prog[oldEmail] -> S.prog[newEmail]
+      if (S.prog && S.prog[oldEmail]) {
+        S.prog[newEmail] = S.prog[newEmail] || {};
+        for (const roomId in S.prog[oldEmail]) {
+          const oldList = S.prog[oldEmail][roomId] || [];
+          const existingList = S.prog[newEmail][roomId] || [];
+          S.prog[newEmail][roomId] = [...new Set([...existingList, ...oldList])];
+        }
+        delete S.prog[oldEmail];
+      }
+
+      // Move / merge S.exams[oldEmail] -> S.exams[newEmail]
+      if (S.exams && S.exams[oldEmail]) {
+        S.exams[newEmail] = (S.exams[newEmail] || []).concat(S.exams[oldEmail] || []);
+        delete S.exams[oldEmail];
+      }
+
+      // Update S.me if it pointed to oldEmail
+      if (S.me) {
+        if (typeof S.me === 'string' && S.me === oldEmail) {
+          S.me = newEmail;
+        } else if (typeof S.me === 'object' && S.me.email === oldEmail) {
+          S.me.email = newEmail;
+          S.me.pass = 'Ecst@2026!';
+        }
+      }
       migrated = true;
     }
 
@@ -64,7 +99,7 @@ function load() {
       if (!r.edited) {
         const seedRoom = seedList.find(s => s.id === r.id);
         if (seedRoom) {
-          S.rooms[idx] = { ...seedRoom };
+          S.rooms[idx] = JSON.parse(JSON.stringify(seedRoom));
         }
       }
     });
@@ -74,7 +109,8 @@ function load() {
       const exists = S.rooms.some(r => r.id === seedRoom.id);
       const isDeleted = S.deleted.includes(seedRoom.id);
       if (!exists && !isDeleted) {
-        S.rooms.push({ ...seedRoom });
+        S.rooms.push(JSON.parse(JSON.stringify(seedRoom)));
+        migrated = true;
       }
     });
 
@@ -156,6 +192,82 @@ window.Store = {
       }
     }
     save();
+  },
+  saveRoom(room) {
+    room.edited = true;
+    const existingIdx = (room.id !== undefined && room.id !== null)
+      ? S.rooms.findIndex(r => r.id === room.id)
+      : -1;
+
+    if (existingIdx >= 0) {
+      const oldRoom = S.rooms[existingIdx];
+      const oldQs = oldRoom.qs || [];
+      const incomingQs = room.qs || [];
+      const highestExistingQId = oldQs.reduce((max, q) => Math.max(max, (q && q.id !== undefined) ? q.id : -1), -1);
+      let nextQId = Math.max(room.nextQId || 0, oldRoom.nextQId || 0, highestExistingQId + 1);
+
+      const matchedOldIndices = new Set();
+      const extraFields = ['type', 'exhibit', 'options', 'correct', 'pts', 'explain', 'norm'];
+
+      const updatedQs = incomingQs.map(q => {
+        const copyQ = { ...q };
+        let matchedOldQ = null;
+        for (let j = 0; j < oldQs.length; j++) {
+          if (!matchedOldIndices.has(j) && oldQs[j] && oldQs[j].q && copyQ.q && oldQs[j].q.trim() === copyQ.q.trim()) {
+            matchedOldIndices.add(j);
+            matchedOldQ = oldQs[j];
+            break;
+          }
+        }
+
+        if (matchedOldQ) {
+          copyQ.id = matchedOldQ.id;
+          extraFields.forEach(f => {
+            if (matchedOldQ[f] !== undefined && copyQ[f] === undefined) {
+              copyQ[f] = matchedOldQ[f];
+            }
+          });
+        } else {
+          copyQ.id = nextQId++;
+        }
+        return copyQ;
+      });
+
+      const nextCounter = Math.max(room.nextQId || 0, oldRoom.nextQId || 0, nextQId);
+      const updatedRoom = {
+        ...oldRoom,
+        ...room,
+        edited: true,
+        qs: updatedQs,
+        nextQId: nextCounter
+      };
+      S.rooms[existingIdx] = updatedRoom;
+      save();
+      return updatedRoom;
+    } else {
+      // New room creation: new room id = max(all room ids ever used, S.deleted) + 1, never reused
+      const allUsedRoomIds = [0, ...S.rooms.map(r => r.id), ...(S.deleted || []), ...(window.SEED || []).map(r => r.id)];
+      const newRoomId = Math.max(...allUsedRoomIds) + 1;
+      room.id = newRoomId;
+
+      const incomingQs = room.qs || [];
+      let nextQId = 0;
+      const updatedQs = incomingQs.map((q, idx) => {
+        const copyQ = { ...q };
+        if (copyQ.id === undefined) {
+          copyQ.id = idx;
+        }
+        nextQId = Math.max(nextQId, copyQ.id + 1);
+        return copyQ;
+      });
+
+      room.qs = updatedQs;
+      room.nextQId = Math.max(room.nextQId || 0, nextQId);
+      room.edited = true;
+      S.rooms.push(room);
+      save();
+      return room;
+    }
   },
   exportBackup() {
     return JSON.stringify(S, null, 2);
