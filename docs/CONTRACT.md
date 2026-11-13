@@ -44,12 +44,13 @@ Store.get() / Store.save()
 Store.isSolved(email, roomId, qId)   Store.markSolved(email, roomId, q)
 Store.pts(q)   Store.userPoints(email)   Store.roomCleared(email, room)
 Store.resetStudent(email)   Store.deleteRoom(roomId)        // بيمسح التقدم اليتيم
+Store.saveRoom(room)        // sets edited:true, preserves question IDs/fields by text match, auto-assigns non-reused IDs
 Store.exportBackup()  // → JSON string
 Store.importBackup(str)  // → {ok:true|false, msg}
 Store.resetAll()
 ```
 
-**QuestionTypes (A يبنيه في `rooms.js`، B و C بيسجلوا فيه):**
+**QuestionTypes (A يبنيه في `store.js`، B و C بيسجلوا فيه):**
 
 ```js
 QuestionTypes.register('mcq', {

@@ -70,13 +70,11 @@ function sv() {
   };
 
   if (edit >= 0) {
-    S.rooms[edit] = { ...S.rooms[edit], ...o };
-  } else {
-    S.rooms.push({ ...o, id: Math.max(0, ...S.rooms.map(r => r.id)) + 1 });
+    o.id = S.rooms[edit].id;
   }
+  Store.saveRoom(o);
 
   edit = null;
-  save();
   draw();
 }
 
