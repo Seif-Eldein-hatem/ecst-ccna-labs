@@ -9,8 +9,21 @@ QuestionTypes.register('text', {
     return `<div class="row"><input id="a${ctx.qIndex}" placeholder="Your answer" onkeydown="if(event.key=='Enter')ans(${ctx.roomIndex},${ctx.qIndex})"><button class="btn btn-submit" onclick="ans(${ctx.roomIndex},${ctx.qIndex})">Submit</button></div>`;
   },
   check(q, answer) {
+    if (answer == null) return false;
+    const str = String(answer).trim();
+    if (!str) return false;
+
+    // IOS command normalization when configured and available
+    if (q.norm === 'ios' && typeof window !== 'undefined' && window.Norm && typeof window.Norm.ios === 'function') {
+      const normInput = window.Norm.ios(str);
+      const candidates = (q.a || '').split(';').map(s => s.trim()).filter(Boolean);
+      if (candidates.some(cand => window.Norm.ios(cand) === normInput)) {
+        return true;
+      }
+    }
+
     const NM = s => s.toLowerCase().replace(/\s*,\s*/g, ',').replace(/\s+/g, ' ').trim();
-    const v = NM(answer);
+    const v = NM(str);
     if (!v) return false;
     return (q.a || '').split(';').map(NM).includes(v);
   }
@@ -83,10 +96,10 @@ function ans(i, k) {
   const q = r.qs[k];
   const inputEl = $('a' + k);
   if (!inputEl) return;
-  const v = NM(inputEl.value);
-  if (!v) return;
+  const raw = inputEl.value;
+  if (!raw || !raw.trim()) return;
   const handler = QuestionTypes.get(q.type || 'text') || QuestionTypes.get('text');
-  const ok = handler && handler.check ? handler.check(q, v) : false;
+  const ok = handler && handler.check ? handler.check(q, raw) : false;
   if (!ok) return toast('Incorrect — try again');
 
   const qId = q.id !== undefined ? q.id : k;

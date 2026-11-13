@@ -412,6 +412,93 @@
           assert(updated.qs[2].id > 30, `Brand new question must get nextQId from per-room counter (> 30), got ${updated.qs[2].id}`);
         });
 
+        // --- TEST 11: QuestionTypes text norm:ios with window.Norm ---
+        test('11. QuestionTypes text with q.norm=ios and window.Norm accepts normalized commands, rejects without norm', () => {
+          const originalNorm = window.Norm;
+          try {
+            window.Norm = { ios: s => s.replace(/^sh /, 'show ') };
+            const handler = QuestionTypes.get('text');
+            assert(handler && typeof handler.check === 'function', 'text handler must have check function');
+
+            const qIos = { q: 'Show routing table', a: 'show ip route', norm: 'ios' };
+            assert(handler.check(qIos, 'sh ip route') === true, "With q.norm='ios', 'sh ip route' must be accepted for 'show ip route'");
+
+            const qPlain = { q: 'Show routing table', a: 'show ip route' };
+            assert(handler.check(qPlain, 'sh ip route') === false, "Without q.norm, 'sh ip route' must NOT be accepted for 'show ip route'");
+          } finally {
+            if (originalNorm !== undefined) {
+              window.Norm = originalNorm;
+            } else {
+              delete window.Norm;
+            }
+          }
+        });
+
+        // --- TEST 12: QuestionTypes text check without window.Norm does not crash ---
+        test('12. QuestionTypes text check without window.Norm does not crash', () => {
+          const originalNorm = window.Norm;
+          try {
+            delete window.Norm;
+            const handler = QuestionTypes.get('text');
+            assert(handler && typeof handler.check === 'function', 'text handler must have check function');
+
+            const qIos = { q: 'Show routing table', a: 'show ip route', norm: 'ios' };
+            assert(handler.check(qIos, 'show ip route') === true, 'Exact answer should match normally without window.Norm');
+            assert(handler.check(qIos, 'sh ip route') === false, 'Abbreviated input should not match without window.Norm');
+          } finally {
+            if (originalNorm !== undefined) {
+              window.Norm = originalNorm;
+            } else {
+              delete window.Norm;
+            }
+          }
+        });
+
+        // --- TEST 13: Backup round-trip (exportBackup, resetAll, importBackup) ---
+        test('13. Backup round-trip restores users, progress, and rooms; invalid JSON returns ok:false and changes nothing', () => {
+          // Setup state with unique user, progress, and room
+          const testEmail = 'backup_student@ecst.edu';
+          Store.get().users.push({ name: 'Backup Student', email: testEmail, pass: 'Pass123!', role: 'student' });
+          Store.markSolved(testEmail, 1, 0);
+          const customRoom = {
+            id: 888,
+            title: 'Backup Custom Room',
+            cat: 'BackupCat',
+            diff: 'Hard',
+            min: 30,
+            desc: 'Custom room for backup test',
+            qs: [{ id: 0, q: 'Q Backup', a: 'ans-backup' }]
+          };
+          Store.get().rooms.push(customRoom);
+          Store.save();
+
+          // 1. Export backup
+          const exported = Store.exportBackup();
+          assert(typeof exported === 'string' && exported.length > 0, 'exportBackup must return a non-empty string');
+
+          // 2. Reset all
+          Store.resetAll();
+          assert(!Store.get().users.some(u => u.email === testEmail), 'After resetAll, test student must be cleared');
+          assert(!Store.get().rooms.some(r => r.id === 888), 'After resetAll, custom room 888 must be cleared');
+          assert(!Store.get().prog[testEmail], 'After resetAll, test student progress must be cleared');
+
+          // 3. Import backup
+          const importResult = Store.importBackup(exported);
+          assert(importResult && importResult.ok === true, 'importBackup of valid export must return {ok: true}');
+
+          // Verify users, progress and rooms are restored
+          assert(Store.get().users.some(u => u.email === testEmail), 'Restored state must include backup student');
+          assert(Store.get().rooms.some(r => r.id === 888), 'Restored state must include custom room 888');
+          assert(Store.isSolved(testEmail, 1, 0), 'Restored state must preserve student progress');
+
+          // 4. Invalid JSON import
+          const snapshotBeforeInvalid = JSON.stringify(Store.get());
+          const invalidResult = Store.importBackup('not json');
+          assert(invalidResult && invalidResult.ok === false, "importBackup('not json') must return {ok: false}");
+          const snapshotAfterInvalid = JSON.stringify(Store.get());
+          assert(snapshotBeforeInvalid === snapshotAfterInvalid, "importBackup('not json') must change nothing");
+        });
+
       } finally {
         // Cleanup test localStorage key
         localStorage.removeItem('ecst_test');

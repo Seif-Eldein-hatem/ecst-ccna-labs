@@ -21,7 +21,7 @@ function toast(t) {
 function header(h) {
   const a = S.me && S.me.role === 'admin';
   return `<header><img src="${LOGO}" alt="ECST"><span class="mono">CCNA Challenge Labs</span><nav>
-<a href="#path" class="${h === 'path' || h.startsWith('room') ? 'on' : ''}">Path</a><a href="#board" class="${h === 'board' ? 'on' : ''}">Leaderboard</a>${a ? `<a href="#admin" class="${h === 'admin' ? 'on' : ''}">Admin</a>` : ''}
+<a href="#path" class="${h === 'path' || h.startsWith('room') ? 'on' : ''}">Path</a><a href="#board" class="${h === 'board' ? 'on' : ''}">Leaderboard</a>${!a ? `<a href="#exam" class="${h === 'exam' ? 'on' : ''}">Exam</a>` : ''}${a ? `<a href="#admin" class="${h === 'admin' ? 'on' : ''}">Admin</a>` : ''}
 <span class="header-user"><div class="user-name">${e(S.me.name)}</div><div class="mono user-role">${a ? 'Supervisor' : 'Student'}</div></span><a onclick="out()">Log out</a></nav></header>`;
 }
 
@@ -46,6 +46,8 @@ function draw(opts) {
     content = board();
   } else if (h === 'admin') {
     content = admin();
+  } else if (h === 'exam') {
+    content = '<main id="exam-root"><div class="card"><h2>Exam Mode</h2><p class="text-mut mt-8">Exam mode is coming soon</p></div></main>';
   } else if (h.startsWith('room-')) {
     content = room(h.slice(5));
   } else {
@@ -53,6 +55,13 @@ function draw(opts) {
   }
 
   a.innerHTML = header(h) + content;
+
+  if (h === 'exam' && window.Exam && typeof window.Exam.render === 'function') {
+    const examRoot = $('exam-root') || a.querySelector('main');
+    if (examRoot) {
+      window.Exam.render(examRoot);
+    }
+  }
 
   // Mount any QuestionTypes that define a mount hook
   if (h.startsWith('room-')) {
