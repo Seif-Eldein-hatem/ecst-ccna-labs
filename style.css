@@ -1,0 +1,448 @@
+/* Main Stylesheet for ECST CCNA Challenge Labs */
+
+:root {
+  --bg: #fff;
+  --fg: #111;
+  --mut: #666;
+  --card: #fff;
+  --bd: #e6e6e6;
+  --soft: #f4f4f4;
+  --red: #a91818;
+  --redsoft: #fbeaea;
+  --ok: #1b7f3b;
+  box-sizing: border-box;
+  padding-top: env(safe-area-inset-top, 0px);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme=light]) {
+    --bg: #0e0e0e;
+    --fg: #f2f2f2;
+    --mut: #9a9a9a;
+    --card: #161616;
+    --bd: #2a2a2a;
+    --soft: #222;
+    --red: #e0464a;
+    --redsoft: #2a1516;
+    --ok: #4cc16b;
+  }
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--fg);
+  font: 15px/1.5 Inter, system-ui, sans-serif;
+}
+
+.mono {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  color: var(--mut);
+}
+
+h1, h2, h3 {
+  font-family: 'Space Grotesk', sans-serif;
+  margin: 0;
+}
+
+header {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 12px 24px;
+  border-bottom: 1px solid var(--bd);
+  position: sticky;
+  top: 0;
+  background: var(--bg);
+  z-index: 5;
+  flex-wrap: wrap;
+}
+
+header img {
+  height: 38px;
+  border-radius: 6px;
+}
+
+header nav {
+  margin-left: auto;
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+nav a, .btn {
+  padding: 8px 16px;
+  border-radius: 999px;
+  color: var(--mut);
+  text-decoration: none;
+  font-weight: 500;
+  cursor: pointer;
+  border: 0;
+  background: none;
+  font: inherit;
+}
+
+nav a.on {
+  background: var(--soft);
+  color: var(--fg);
+}
+
+.btn {
+  background: var(--red);
+  color: #fff;
+  border-radius: 10px;
+  font-weight: 600;
+}
+
+.btn.g {
+  background: var(--soft);
+  color: var(--fg);
+}
+
+.btn.s {
+  padding: 5px 10px;
+  font-size: 13px;
+}
+
+main {
+  max-width: 1000px;
+  margin: 0 auto;
+  padding: 40px 20px 80px;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 16px;
+  margin: 28px 0;
+}
+
+.card {
+  background: var(--card);
+  border: 1px solid var(--bd);
+  border-radius: 20px;
+  padding: 22px;
+}
+
+.big {
+  font: 700 34px 'Space Grotesk';
+  margin-top: 6px;
+}
+
+.big small {
+  font: 400 13px 'JetBrains Mono';
+  color: var(--mut);
+}
+
+.bar {
+  height: 8px;
+  background: var(--soft);
+  border-radius: 9px;
+  overflow: hidden;
+  margin-top: 10px;
+}
+
+.bar i {
+  display: block;
+  height: 100%;
+  background: var(--red);
+}
+
+.room {
+  display: flex;
+  gap: 18px;
+  margin-bottom: 16px;
+  cursor: pointer;
+  align-items: flex-start;
+}
+
+.room.lock {
+  opacity: .6;
+  cursor: default;
+}
+
+.num {
+  min-width: 54px;
+  height: 54px;
+  border-radius: 14px;
+  background: var(--soft);
+  display: grid;
+  place-items: center;
+  font: 500 16px 'JetBrains Mono';
+}
+
+.room.cur {
+  border-color: var(--red);
+}
+
+.room.cur .num {
+  border: 1px solid var(--red);
+}
+
+.tag {
+  display: inline-block;
+  padding: 1px 10px;
+  border-radius: 99px;
+  font: 500 11px 'JetBrains Mono';
+  letter-spacing: .1em;
+  background: var(--soft);
+  text-transform: uppercase;
+}
+
+.tag.Medium, .tag.Hard {
+  background: var(--redsoft);
+  color: var(--red);
+}
+
+.tag.Expert {
+  background: var(--red);
+  color: #fff;
+}
+
+input, select, textarea {
+  width: 100%;
+  padding: 12px 14px;
+  border: 1px solid var(--bd);
+  border-radius: 12px;
+  background: var(--bg);
+  color: var(--fg);
+  font: inherit;
+  margin: 6px 0 14px;
+}
+
+input:focus, textarea:focus {
+  outline: 0;
+  border-color: var(--red);
+}
+
+.auth {
+  max-width: 420px;
+  margin: 60px auto;
+  text-align: center;
+}
+
+.auth .card {
+  text-align: left;
+  margin-top: 24px;
+}
+
+.q {
+  border: 1px solid var(--bd);
+  border-radius: 16px;
+  padding: 18px;
+  margin-bottom: 12px;
+}
+
+.q.done {
+  border-color: var(--ok);
+}
+
+.row {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.row input {
+  margin: 10px 0 0;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+td, th {
+  text-align: left;
+  padding: 10px;
+  border-bottom: 1px solid var(--bd);
+}
+
+th {
+  font: 500 11px 'JetBrains Mono';
+  color: var(--mut);
+  letter-spacing: .1em;
+  text-transform: uppercase;
+}
+
+.toast {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--fg);
+  color: var(--bg);
+  padding: 10px 18px;
+  border-radius: 10px;
+  z-index: 9;
+}
+
+.scroll {
+  overflow-x: auto;
+}
+
+/* Header layout classes */
+.header-user {
+  text-align: right;
+  margin-left: 10px;
+}
+
+.user-name {
+  font-weight: 500;
+}
+
+.user-role {
+  font-size: 10px;
+}
+
+/* Auth view classes */
+.auth-logo {
+  height: 80px;
+  border-radius: 14px;
+}
+
+.auth-title {
+  margin-top: 18px;
+}
+
+.auth-btn {
+  width: 100%;
+  padding: 13px;
+}
+
+.auth-switch-link {
+  color: var(--red);
+  cursor: pointer;
+}
+
+/* Common text & utility classes */
+.text-mut {
+  color: var(--mut);
+}
+
+.text-red {
+  color: var(--red);
+}
+
+.text-ok {
+  color: var(--ok);
+}
+
+.nowrap {
+  white-space: nowrap;
+}
+
+.mt-6 {
+  margin-top: 6px;
+}
+
+.mt-8 {
+  margin-top: 8px;
+}
+
+.mt-10 {
+  margin-top: 10px;
+}
+
+.mt-16 {
+  margin-top: 16px;
+}
+
+.mt-20 {
+  margin-top: 20px;
+}
+
+.mt-24 {
+  margin-top: 24px;
+}
+
+.mb-24 {
+  margin-bottom: 24px;
+}
+
+.font-medium {
+  font-weight: 500;
+}
+
+/* Path view classes */
+.path-brand {
+  color: var(--red);
+}
+
+.path-title {
+  font-size: 48px;
+  margin: 10px 0;
+}
+
+.path-desc {
+  color: var(--mut);
+  max-width: 560px;
+}
+
+.track-label {
+  display: flex;
+  justify-content: space-between;
+}
+
+.room-body {
+  flex: 1;
+}
+
+.room-title {
+  font-size: 20px;
+  margin: 6px 0 2px;
+}
+
+.room-locked-text {
+  margin-top: 10px;
+  text-transform: none;
+}
+
+/* Room detail view classes */
+.back-link {
+  color: var(--red);
+  text-decoration: none;
+}
+
+.room-page-title {
+  font-size: 40px;
+  margin: 8px 0;
+}
+
+.q-title {
+  margin-top: 6px;
+  font-weight: 500;
+}
+
+.q-correct {
+  color: var(--ok);
+  margin-top: 8px;
+}
+
+.btn-submit {
+  margin-top: 10px;
+}
+
+.room-cleared-card {
+  border-color: var(--ok);
+  text-align: center;
+}
+
+.btn-next-room {
+  display: inline-block;
+  text-decoration: none;
+}
+
+/* Admin view classes */
+.admin-section-title {
+  margin: 28px 0 12px;
+}
